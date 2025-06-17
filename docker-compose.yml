@@ -8,7 +8,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./docker/nginx/gateway.conf:/etc/nginx/conf.d/default.conf
+      - ./services/nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
     #      - ./services/auth-service/src:/var/www/auth
     #      - ./services/media-service/src:/var/www/media
     depends_on:
