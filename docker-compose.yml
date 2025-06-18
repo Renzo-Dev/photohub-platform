@@ -1,121 +1,28 @@
-services:
-  # ───────────────────────────────
-  # 🔷 API Gateway (Nginx)
+version: '3.8'
 
-  api_gateway:
-    container_name: photohub_api_gateway
-    image: nginx:latest
+services:
+  nginx_gateway:
+    container_name: nginx_gateway
+    build:
+      context: ./services/nginx
+      dockerfile: Dockerfile
     ports:
       - "80:80"
+    #      - "443:443" # SSL
     volumes:
-      - ./services/nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
-    #      - ./services/auth-service/src:/var/www/auth
-    #      - ./services/media-service/src:/var/www/media
-    depends_on:
-      - auth_service
-      - media_service
-    networks:
-      - photohub
+      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf
 
-  # 🔐 Auth Service
-  auth_service:
-    container_name: photohub_auth_service
+  frontend_app:
+    container_name: frontend_app
     build:
-      context: ./services/auth-service
+      context: ./services/frontend
+      dockerfile: Dockerfile
     volumes:
-      - ./services/auth-service/src:/var/www/html
-    depends_on:
-      - mysql
-      - redis
+      - ./services/frontend/src:/app
     networks:
       - photohub
-
-  # 🖼️ Media Service
-  media_service:
-    container_name: photohub_media_service
-    build:
-      context: ./services/media-service
-    volumes:
-      - ./services/media-service/src:/var/www/html
-    depends_on:
-      - mysql
-      - redis
-      - minio
-      - rabbitmq
-    networks:
-      - photohub
-
-  # ⚙️ Media Worker
-  media_worker:
-    container_name: photohub_media_worker
-    build:
-      context: ./services/media-service
-    volumes:
-      - ./services/media-service/src:/var/www/html
-    command: php artisan queue:work
-    depends_on:
-      - media_service
-    networks:
-      - photohub
-
-  # 🤖 ML Service
-  ml_service:
-    container_name: photohub_ml_service
-    build:
-      context: ./services/ml-service
-    ports:
-      - "5000:5000"
-    networks:
-      - photohub
-
-  # 🐘 MySQL
-  mysql:
-    container_name: photohub_mysql
-    image: mysql:8.0
-    env_file:
-      - ./services/mysql/.env
-    volumes:
-      - db_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-    networks:
-      - photohub
-
-  # 🧠 Redis
-  redis:
-    container_name: photohub_redis
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    networks:
-      - photohub
-
-  # 📬 RabbitMQ
-  rabbitmq:
-    container_name: photohub_rabbitmq
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672" # RabbitMQ port
-      - "15672:15672" # Management UI port
-    networks:
-      - photohub
-
-  # 📂 MinIO
-  minio:
-    container_name: photohub_minio
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000" # MinIO API port
-      - "9001:9001" # MinIO Console port
-    volumes:
-      - minio_data:/data
-    networks:
-      - photohub
-volumes:
-  db_data:
-  minio_data:
-
+    command: >
+      sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
 networks:
   photohub:
     driver: bridge
