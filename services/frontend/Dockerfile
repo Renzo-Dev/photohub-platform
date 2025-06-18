@@ -7,5 +7,8 @@ WORKDIR /app
 # (обычно node_modules монтируются тоже через volume)
 # RUN npm ci
 
+RUN apk add --no-cache \
+    mc
+
 # Открываем порт 3000 (для Vite)
 EXPOSE 3000
