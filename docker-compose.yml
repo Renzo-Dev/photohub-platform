@@ -40,7 +40,7 @@ services:
     volumes:
       - ./services/auth-service/src:/var/www
     expose:
-      - 9000
+      - "9000"
     networks:
       - photohub
 

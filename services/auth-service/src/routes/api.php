@@ -1,15 +1,16 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => 'auth'], function () {
-    Route::post('register', 'AuthController@login');
-    Route::post('login', 'AuthController@register');
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
 
     Route::middleware('auth:api')->group(function () {
-        Route::get('me', 'AuthController@me');
-        Route::post('refresh', 'AuthController@refresh');
-        Route::post('logout', 'AuthController@logout');
-        Route::post('change-password', 'AuthController@changePassword');
+        Route::get('me', [AuthController::class, 'me']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('change-password', [AuthController::class, 'changePassword']);
     });
 });

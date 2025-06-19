@@ -24,6 +24,24 @@ class User extends Authenticatable
     ];
 
     /**
+     * Get the identifier that will be stored in the JWT.
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey(); // Return the primary key of the user
+    }
+
+    /**
+     * Get the JWT custom claims for the user.
+     *
+     * @return array<string, mixed>
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
