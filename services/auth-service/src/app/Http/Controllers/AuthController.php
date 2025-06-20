@@ -2,49 +2,65 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Nette\Schema\ValidationException;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     // Registration
     public function register(Request $request)
     {
         try {
             $data = $request->validate([
-                'name' => 'required|string|max:255',
+                'name' => 'required|string|max:255|unique:users',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:6',
             ]);
 
-            $user = User::creare([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Hash::make($data['password'])
-            ]);
+            $this->authService->register($data);
 
-            $token = JWTAuth::fromUser($user);
+            return response()->json(['message' => 'User registered successfully'], 201);
 
-            return response()->json([
-                'token' => $token,
-                'user' => $user
-            ], 201);
-
-        } catch (ValidationException $e) {
-            return response()->json(['error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Registration failed'], 500);
+            return response()->json(['error' => 'Registration failed: ' . $e->getMessage()], 400);
         }
     }
 
     public function login(Request $request)
     {
+        try {
+            $creditials = $request->validate([
+                'email' => 'required|string|email',
+                'password' => 'required|string|min:6',
+            ]);
+
+            $token = $this->authService->login($creditials);
+            return response()->json([
+                'message' => 'Login successful',
+                'token' => $token,
+                'user' => auth()->user()
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Login failed: ' . $e->getMessage()], 401);
+        }
     }
 
-    public function me(Request $request)
+    public function me()
     {
+        try {
+            dd('WORK');
+            $user = $this->authService->me();
+            return response()->json($user, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to retrieve user: ' . $e->getMessage()], 400);
+        }
     }
 
     public function refresh()

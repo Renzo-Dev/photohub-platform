@@ -28,3 +28,7 @@ EXPOSE 9000
 
 # Запуск php-fpm
 CMD ["php-fpm"]
+
+
+#chmod -R 775 storage
+#chown -R www-data:www-data storage
