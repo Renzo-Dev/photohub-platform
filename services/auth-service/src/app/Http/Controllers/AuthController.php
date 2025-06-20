@@ -41,7 +41,6 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        return response()->json(['message' => 'Login functionality not implemented yet'], 501);
     }
 
     public function me(Request $request)

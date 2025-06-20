@@ -59,8 +59,37 @@ services:
     networks:
       - photohub
 
+  # Database service for user management
+  mysql_users:
+    container_name: mysql_users
+    image: mysql:8.0
+    restart: always
+    env_file:
+      - ./services/mysql/mysql_users/.env
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_users_data:/var/lib/mysql
+    networks:
+      - photohub
+
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - photohub
+
 volumes:
   nginx_logs:
+    driver: local
+  mysql_users_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:
