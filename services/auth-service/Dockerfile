@@ -24,5 +24,7 @@ COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 # Рабочая директория (куда монтируется твой volume)
 WORKDIR /var/www
 
+EXPOSE 9000
+
 # Запуск php-fpm
 CMD ["php-fpm"]

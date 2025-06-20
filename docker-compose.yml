@@ -4,15 +4,30 @@ services:
   nginx_gateway:
     container_name: nginx_gateway
     build:
-      context: ./services/nginx
+      context: ./services/nginx/nginx_gateway
       dockerfile: Dockerfile
     ports:
       - "80:80"
     #      - "443:443" # SSL
     volumes:
-      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./services/nginx/nginx_gateway/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - frontend_app
+      - nginx_auth
+    networks:
+      - photohub
+
+  nginx_auth:
+    container_name: nginx_auth
+    build:
+      context: ./services/nginx/nginx_auth
+      dockerfile: Dockerfile
+    expose:
+      - "8080"
+    volumes:
+      - ./services/nginx/nginx_auth/nginx.conf:/etc/nginx/nginx.conf
+      - ./services/auth-service/src/public:/var/www
+    depends_on:
+      - auth-service
     networks:
       - photohub
 
