@@ -55,7 +55,6 @@ class AuthController extends Controller
     public function me()
     {
         try {
-            dd('WORK');
             $user = $this->authService->me();
             return response()->json($user, 200);
         } catch (\Exception $e) {
