@@ -42,11 +42,13 @@ class AuthController extends Controller
             ]);
 
             $token = $this->authService->login($creditials);
+
             return response()->json([
-                'message' => 'Login successful',
-                'token' => $token,
-                'user' => auth()->user()
+                'access_token' => $token,
+                'expires_in' => auth()->factory()->getTTL() * 60,
+                'user' => auth()->user(),
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json(['error' => 'Login failed: ' . $e->getMessage()], 401);
         }
@@ -64,6 +66,12 @@ class AuthController extends Controller
 
     public function refresh()
     {
+        try {
+            $token = auth()->refresh();
+            return response()->json(['token' => $token], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Token refresh failed: ' . $e->getMessage()], 400);
+        }
     }
 
     public function logout()
