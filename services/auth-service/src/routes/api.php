@@ -11,8 +11,8 @@ Route::group(['prefix' => 'auth'], function () {
 
     Route::middleware(JwtMiddleware::class)->group(function () {
         Route::get('me', [AuthController::class, 'me']);
-        Route::post('refresh', [AuthController::class, 'refresh']);
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::post('change-password', [AuthController::class, 'changePassword']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::get('/validate-token', [AuthController::class, 'validate_token']);
     });
 });

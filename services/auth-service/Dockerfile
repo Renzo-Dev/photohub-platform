@@ -13,7 +13,10 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     freetype-dev \
     libxml2-dev \
-    redis
+    build-base \
+    autoconf \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 # PHP-расширения для Laravel
 RUN docker-php-ext-install intl pdo pdo_mysql mbstring zip xml gd
@@ -28,6 +31,7 @@ EXPOSE 9000
 
 # Запуск php-fpm
 CMD ["php-fpm"]
+
 
 
 #chmod -R 775 storage

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\DTO\UserDTO;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -42,14 +42,8 @@ class AuthController extends Controller
                 'password' => 'required|string|min:6',
             ]);
 
-            $token = $this->authService->login($creditials);
-
-            return response()->json([
-                'access_token' => $token,
-                'expires_in' => auth()->factory()->getTTL() * 60,
-                'user' => UserDTO::fromModel(auth()->user())->toArray(),
-            ], 200);
-
+            $response = $this->authService->login($creditials);
+            return response()->json($response, 200);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Login failed: ' . $e->getMessage()], 401);
         }
@@ -65,11 +59,16 @@ class AuthController extends Controller
         }
     }
 
-    public function refresh()
+    public function refresh(Request $request)
     {
         try {
-            $token = auth()->refresh();
-            return response()->json(['token' => $token], 200);
+
+            // Get the refresh token from the request
+            $refreshToken = $request->input('refresh_token');
+            
+            $response = $this->authService->refresh($refreshToken);
+
+            return response()->json($response, 200);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Token refresh failed: ' . $e->getMessage()], 400);
         }
@@ -77,9 +76,25 @@ class AuthController extends Controller
 
     public function logout()
     {
+        try {
+            $accessToken = JWTAuth::getToken(); // Get the current access token
+            $refreshToken = request()->input('refresh_token'); // Get the refresh token from the request
+
+            $this->authService->logout($accessToken, $refreshToken); // Call the logout method in the AuthService
+
+            return response()->json(['message' => 'User logged out successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Logout failed: ' . $e->getMessage()], 400);
+        }
     }
 
-    public function changePassword()
+
+    public function validate_token()
     {
+        try {
+            return response()->json(['message' => 'Token is valid'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Token validation failed: ' . $e->getMessage()], 400);
+        }
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'refresh_token_ttl' => env('REFRESH_TOKEN_TTL', 1125209600), // 14 дней в секундах,
 
     /*
     |--------------------------------------------------------------------------
@@ -115,5 +116,4 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
-
 ];
