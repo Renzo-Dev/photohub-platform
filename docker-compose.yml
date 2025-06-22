@@ -34,14 +34,12 @@ services:
   frontend_app:
     container_name: frontend_app
     build:
-      context: ./services/frontend
+      context: frontend
       dockerfile: Dockerfile
     expose:
       - "3000"
     volumes:
-      - ./services/frontend/src:/app
-      - nginx_logs:/var/log/nginx/access.log;
-      - nginx_logs:/var/log/nginx/error.log;
+      - ./frontend/src:/app
     networks:
       - photohub
     command: >

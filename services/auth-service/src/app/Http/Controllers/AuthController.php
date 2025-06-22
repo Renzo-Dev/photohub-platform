@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\UserDTO;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 
@@ -46,7 +47,7 @@ class AuthController extends Controller
             return response()->json([
                 'access_token' => $token,
                 'expires_in' => auth()->factory()->getTTL() * 60,
-                'user' => auth()->user(),
+                'user' => UserDTO::fromModel(auth()->user())->toArray(),
             ], 200);
 
         } catch (\Exception $e) {
