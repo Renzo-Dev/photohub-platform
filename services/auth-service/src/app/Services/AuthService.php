@@ -1,5 +1,7 @@
 <?php
 
+// логика логина, регистрации, логаута, восстановления пароля
+
 namespace App\Services;
 
 use App\DTO\UserDTO;
