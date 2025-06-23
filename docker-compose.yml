@@ -48,10 +48,10 @@ services:
   auth-service:
     container_name: auth_service
     build:
-      context: ./services/auth-service
+      context: ./backend/auth-service
       dockerfile: Dockerfile
     volumes:
-      - ./services/auth-service/src:/var/www
+      - ./backend/auth-service/src:/var/www
     expose:
       - "9000"
     networks:
