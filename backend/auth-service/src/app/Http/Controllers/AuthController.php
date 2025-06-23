@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -18,35 +17,25 @@ class AuthController extends Controller
     // Registration
     public function register(Request $request)
     {
-        try {
-            $data = $request->validate([
-                'name' => 'required|string|max:255|unique:users',
-                'email' => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:6',
-            ]);
+        $data = $request->validate([
+            'name' => 'required|string|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6',
+        ]);
+        $this->authService->register($data);
 
-            $this->authService->register($data);
-
-            return response()->json(['message' => 'User registered successfully'], 201);
-
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Registration failed: ' . $e->getMessage()], 400);
-        }
+        return response()->json(['message' => 'User registered successfully'], 201);
     }
 
     public function login(Request $request)
     {
-        try {
-            $creditials = $request->validate([
-                'email' => 'required|string|email',
-                'password' => 'required|string|min:6',
-            ]);
+        $creditials = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string|min:6',
+        ]);
 
-            $response = $this->authService->login($creditials);
-            return response()->json($response, 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Login failed: ' . $e->getMessage()], 401);
-        }
+        $response = $this->authService->login($creditials);
+        return $this->getJsonResponse($response);
     }
 
     public function me()
@@ -61,28 +50,21 @@ class AuthController extends Controller
 
     public function refresh(Request $request)
     {
-        try {
+        $refreshToken = $request->cookie('refresh_token');
+        $response = $this->authService->refresh($refreshToken);
 
-            // Get the refresh token from the request
-            $refreshToken = $request->input('refresh_token');
-            
-            $response = $this->authService->refresh($refreshToken);
-
-            return response()->json($response, 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Token refresh failed: ' . $e->getMessage()], 400);
-        }
+        return $this->getJsonResponse($response);
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
         try {
-            $accessToken = JWTAuth::getToken(); // Get the current access token
-            $refreshToken = request()->input('refresh_token'); // Get the refresh token from the request
-
+            $refreshToken = $request->cookie('refresh_token'); // Get the refresh token from the request
+            $accessToken = $request->cookie('access_token'); // Get the refresh token from the request
             $this->authService->logout($accessToken, $refreshToken); // Call the logout method in the AuthService
 
-            return response()->json(['message' => 'User logged out successfully'], 200);
+            return response()->json(['message' => 'User logged out successfully'], 200)->cookie('access_token', '', -1, '/')
+                ->cookie('refresh_token', '', -1, '/');
         } catch (\Exception $e) {
             return response()->json(['error' => 'Logout failed: ' . $e->getMessage()], 400);
         }
@@ -96,5 +78,34 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Token validation failed: ' . $e->getMessage()], 400);
         }
+    }
+
+    /**
+     * @param array $response
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getJsonResponse(array $response): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'user' => $response['user'],
+            'expires_in' => $response['expires_in']
+        ])->cookie('access_token',
+            $response['access_token'],
+            $response['expires_in'] / 60,   // В минутах
+            '/',
+            null,
+            true,    // secure (только по https)
+            true,    // httpOnly
+            false,   // raw
+            'Strict' // same-site)
+        )->cookie('refresh_token',
+            $response['refresh_token'],
+            60 * 24 * 7,   // например, 7 дней
+            '/',
+            null,
+            true,
+            true,
+            false,
+            'Strict');
     }
 }

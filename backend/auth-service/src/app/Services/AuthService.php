@@ -5,6 +5,8 @@
 namespace App\Services;
 
 use App\DTO\UserDTO;
+use App\Exceptions\InvalidCredentialsException;
+use App\Exceptions\UserNotFoundException;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -24,18 +26,20 @@ class AuthService
 
     public function register($data)
     {
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password'])
         ]);
+
+        return $user;
     }
 
     public function login($credentials)
     {
         $token = auth()->attempt($credentials);
         if (!$token) {
-            throw new \Exception('Invalid credentials');
+            throw new InvalidCredentialsException();
         }
 
         // If the user is authenticated, get the user instance
@@ -44,7 +48,11 @@ class AuthService
         $refreshToken = Str::uuid()->toString();
 
         // Store the refresh token in the cache with the user ID
-        Cache::put("refresh_token:{$refreshToken}", $user->id, $this->ttl);
+//        Cache::put("refresh_token:{$refreshToken}", $user->id, $this->ttl);
+        Cache::put("refresh_token:{$refreshToken}", [
+            'user_id' => $user->id,
+            'access_token' => $token,
+        ], $this->ttl);
 
         return [
             'access_token' => $token,
@@ -61,24 +69,33 @@ class AuthService
 
     public function refresh($refreshToken)
     {
-        // Get the user ID from the cache using the refresh token
-        if (!$userId = Cache::get("refresh_token:{$refreshToken}")) {
+        if (!$data = Cache::get("refresh_token:{$refreshToken}")) {
             throw new \Exception('Invalid refresh token');
         }
+
         // Find the user by ID
-        $user = User::find($userId);
+        $user = User::find($data['user_id']);
         if (!$user) {
-            throw new \Exception('User not found');
+            throw new UserNotFoundException();
         }
 
         // Generate a new access token
         $newAccessToken = JWTAuth::fromUser($user);
+
+        // Remove the old refresh token from the cache
         Cache::forget("refresh_token:{$refreshToken}");
+
+        // Generate a new refresh token
         $newRefreshToken = Str::uuid()->toString();
+
         // Store the new refresh token in the cache
-        Cache::put("refresh_token:{$newRefreshToken}", $user->id, $this->ttl);
+        Cache::put("refresh_token:{$newRefreshToken}", [
+            'user_id' => $user->id,
+            'access_token' => $newAccessToken,
+        ], $this->ttl);
+
         // Invalidate the old access token
-        $this->logout(JWTAuth::getToken(),null);
+//        $this->logout($data['access_token'], null);
 
         return [
             'access_token' => $newAccessToken,
