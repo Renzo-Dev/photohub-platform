@@ -5,7 +5,6 @@
 namespace App\Services;
 
 use App\DTO\UserDTO;
-use App\Exceptions\InvalidCredentialsException;
 use App\Exceptions\UserNotFoundException;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -16,12 +15,15 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthService
 {
-    // Set a new TTL for the refresh token from configuration
-    protected $ttl;
+    protected JwtService $jwtService;
+    protected UserService $userService;
+    protected CacheService $cacheService;
 
-    public function __construct()
+    public function __construct(JwtService $jwtService, UserService $userService, CacheService $cacheService)
     {
-        $this->ttl = config('auth.refresh_token_ttl');
+        $this->jwtService = $jwtService;
+        $this->userService = $userService;
+        $this->cacheService = $cacheService;
     }
 
     public function register($data)
@@ -37,23 +39,18 @@ class AuthService
 
     public function login($credentials)
     {
-        $token = auth()->attempt($credentials);
-        if (!$token) {
-            throw new InvalidCredentialsException();
-        }
+        // Validate the credentials and attempt to generate an access token
+        $token = $this->jwtService->generateAccessToken($credentials);
 
         // If the user is authenticated, get the user instance
-        $user = auth()->user();
+        $user = $this->userService->getUser();
+
         // Generate a new access token
-        $refreshToken = Str::uuid()->toString();
+        $refreshToken = $this->jwtService->generateRefreshToken();
 
-        // Store the refresh token in the cache with the user ID
-//        Cache::put("refresh_token:{$refreshToken}", $user->id, $this->ttl);
-        Cache::put("refresh_token:{$refreshToken}", [
-            'user_id' => $user->id,
-            'access_token' => $token,
-        ], $this->ttl);
+        $this->cacheService->storeRefreshTokenInCache($refreshToken, $user->id, $token, $this->jwtService->ttl);
 
+        // Return the access token, refresh token, and user data
         return [
             'access_token' => $token,
             'refresh_token' => $refreshToken,
@@ -94,9 +91,6 @@ class AuthService
             'access_token' => $newAccessToken,
         ], $this->ttl);
 
-        // Invalidate the old access token
-//        $this->logout($data['access_token'], null);
-
         return [
             'access_token' => $newAccessToken,
             'refresh_token' => $newRefreshToken,
@@ -116,6 +110,5 @@ class AuthService
         if ($refreshToken) {
             Cache::forget("refresh_token:{$refreshToken}");
         }
-
     }
 }
